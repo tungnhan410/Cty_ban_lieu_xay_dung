@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Quản trị sản phẩm</h2>
+<a class="btn btn-success mb-3" href="{{ url_for('admin_add') }}">Thêm sản phẩm</a>
+<table class="table">
+  <thead><tr><th>ID</th><th>Tên</th><th>Giá</th><th>Kho</th><th>Hành động</th></tr></thead>
+  <tbody>
+    {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ "{:,.0f}".format(p.price) }}</td>
+      <td>{{ p.stock }}</td>
+      <td>
+        <a class="btn btn-sm btn-danger" href="{{ url_for('admin_delete', id=p.id) }}">Xóa</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="{{ url_for('index') }}" class="btn btn-outline-secondary">⬅ Quay lại trang chủ</a>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Danh sách vật liệu</h1>
+<form class="mb-3" method="get">
+  <div class="input-group">
+    <input type="text" name="q" class="form-control" placeholder="Tìm kiếm..." value="{{ q }}">
+    <button class="btn btn-primary">Tìm</button>
+  </div>
+</form>
+<div class="row">
+  {% for p in products %}
+  <div class="col-md-4 mb-3">
+    <div class="card h-100">
+      {% if p.image %}
+      <img src="/{{ p.image }}" class="card-img-top" style="height:180px; object-fit:cover;">
+      {% endif %}
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ p.name }}</h5>
+        <p class="card-text">{{ p.description|truncate(100) }}</p>
+        <div class="mt-auto">
+          <p class="fw-bold">{{ "{:,.0f}".format(p.price) }} VND</p>
+          <a href="{{ url_for('product_detail', slug=p.slug) }}" class="btn btn-sm btn-outline-primary">Xem</a>
+            <a href="{{ url_for('congno') }}" class="btn btn-sm btn-outline-secondary">📑 Quản lý công nợ</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

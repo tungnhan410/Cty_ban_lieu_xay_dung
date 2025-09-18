@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Giỏ hàng</h2>
+{% if items %}
+<table class="table">
+  <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Thành tiền</th><th></th></tr></thead>
+  <tbody>
+    {% for it in items %}
+    <tr>
+      <td>{{ it.product.name }}</td>
+      <td>{{ it.qty }}</td>
+      <td>{{ "{:,.0f}".format(it.subtotal) }} VND</td>
+      <td><a href="{{ url_for('cart_remove', product_id=it.product.id) }}" class="btn btn-sm btn-danger">Xóa</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="fw-bold">Tổng: {{ "{:,.0f}".format(total) }} VND</p>
+<form action="{{ url_for('checkout') }}" method="post">
+  <button class="btn btn-primary">Thanh toán (mô phỏng)</button>
+</form>
+{% else %}
+<p>Giỏ hàng trống.</p>
+<a href="{{ url_for('index') }}">
+  <button>🏠 Quay lại cửa hàng</button>
+</a>
+
+{% endif %}
+{% endblock %}
+    

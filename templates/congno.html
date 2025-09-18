@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý công nợ nâng cao</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
+  <style> 
+  body {
+    font-family: Arial;
+    background: url("{{ url_for('static', filename='img/ke_toan.png') }}") no-repeat center center fixed;
+    background-size: cover;
+    padding: 20px;
+  }
+    .card { background: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, select, button { padding: 6px 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+    .btn { background: #2c7be5; color: white; border: none; cursor: pointer; }
+    .btn:hover { background: #1a5edc; }
+    .btn-danger { background: #dc3545; }
+    .btn-warning { background: #ffc107; color: black; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #f0f0f0; }
+
+    .login-form {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px 1fr; /* label + input, label + input */
+  gap: 12px 20px;
+  align-items: center;
+  max-width: 800px;
+}
+
+.login-form label {
+  text-align: right;
+  font-weight: bold;
+}
+
+.login-form input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px 1fr;  /* 4 cột: label + input + label + input */
+  gap: 15px 25px;
+  margin-bottom: 20px;
+  align-items: center;
+  max-width: 1000px;
+}
+
+
+.form-grid label {
+  font-weight: bold;
+  text-align: right;
+  font-size: 16px;   /* tăng chữ label */
+}
+
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.company-info {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px 1fr; /* giống form-grid */
+  gap: 10px 25px;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+/* input ngắn hơn */
+.short {
+  max-width: 400px;   /* chỉ chiếm tối đa 180px */
+}
+.long{
+  max-width: 400px;
+}
+
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Chia thành 2 cột có chiều rộng bằng nhau */
+        gap: 10px; /* Khoảng cách giữa các cột */
+    }
+    .grid-item {
+        border: 1px solid black;
+        padding: 10px;
+    }
+    
+.header-card {
+  margin-bottom: 20px;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.header-bottom {
+  font-size: 16px;
+  color: #333;
+}
+
+  </style>
+</head>
+<body>
+
+  <div id="loginCard" class="card">
+  <h2>Đăng nhập / Đăng ký</h2>
+
+  <div class="login-form">
+    <label for="loginUser">Tài khoản:</label>
+    <input type="text" id="loginUser">
+
+    <label for="loginPass">Mật khẩu:</label>
+    <input type="password" id="loginPass">
+
+    <label for="companyName">Tên công ty:</label>
+    <input type="text" id="companyName" name="companyName">
+
+    <label for="companyCode">Mã công ty:</label>
+    <input type="text" id="companyCode" name="companyCode">
+
+    <label for="chuTich">Chủ tịch:</label>
+    <input type="text" id="chuTich" name="chuTich" required>
+  </div>
+
+  <div style="margin-top:15px;">
+    <button class="btn" onclick="dangNhap()">Đăng nhập</button>
+    <button class="btn-warning" onclick="dangKy()">Đăng ký</button>
+  </div>
+</div>
+
+<div id="mainContent">
+<div class="card header-card">
+  <div class="header-top">
+    <div>👋 Xin chào, <span id="tenUser"></span></div>
+    <button class="btn-danger" onclick="dangXuat()">Đăng xuất</button>
+  </div>
+  <div class="header-bottom">
+    <strong>Tên công ty:</strong> <span id="tenCty"></span> &nbsp;&nbsp; | &nbsp;&nbsp;
+    <strong>Chủ tịch:</strong> <span id="tenChuTich"></span>
+  </div>
+</div>
+
+
+<div class="card">
+  <h2>Nhập giao dịch</h2>
+  <form class="form-grid">
+
+  <label for="maKH">Mã KH:</label>
+  <input type="text" id="maKH" list="danhSachMa" oninput="layTenTuMa()">
+  <label for="ten">Tên KH:</label>
+  <input type="text" id="ten" list="danhSachTen">
+
+  <label for="ngay">Ngày:</label>
+  <input type="date" id="ngay">
+  <label for="loai">Loại:</label>
+  <select id="loai">
+    <option value="Ghi Nợ">Ghi Nợ</option>
+    <option value="Trả Nợ">Trả Nợ</option>
+  </select>
+
+  <label for="mahang">Mã hàng hóa:</label>
+  <input type="text" id="mahang" list="danhSachMaHang" oninput="layTenTuMaHang()">
+  <label for="tenhang">Tên hàng hóa:</label>
+  <input type="text" id="tenhang">
+
+  <label for="soluong">Số lượng:</label>
+  <input type="number" id="soluong" oninput="capNhatThanhTien()">
+  <label for="dongia">Đơn giá:</label>
+  <input type="number" id="dongia" oninput="capNhatThanhTien()">
+
+  <label for="thanhtien">Thành tiền:</label>
+  <input type="number" id="thanhtien" readonly>
+  <label for="sodu">Số dư đầu kỳ:</label>
+  <input type="number" id="sodu">
+
+</form>
+
+  </form>
+
+  <button onclick="luuSoDuDauKy()">Lưu đầu kỳ</button>
+  <button class="btn" onclick="nhapGiaoDich()">Nhập</button>
+  <button class="btn" onclick="xuatExcel()">Xuất Excel</button>
+  <button class="btn" onclick="inBaoCao()">In báo cáo</button>
+</div>
+
+
+
+
+<div class="card">
+  <h2>Chi tiết giao dịch</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>STT</th><th>Ngày</th><th>Mã KH</th><th>Tên</th><th>Loại</th><th>Mã hàng</th><th>Tên hàng</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>Hành động</th>
+      </tr>
+    </thead>
+    <tbody id="bangChiTiet"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Tổng hợp công nợ</h2>
+  <table>
+    <thead>
+      <tr><th>Tên</th><th>Nợ đầu kỳ</th><th>Ghi nợ</th><th>Trả nợ</th><th>Nợ hiện tại</th></tr>
+    </thead>
+    <tbody id="bangTongHop"></tbody>
+  </table>
+</div>
+
+
+
+<script>
+let maTenMap = JSON.parse(localStorage.getItem("ma_ten_map") || '{}');
+let maHangMap = JSON.parse(localStorage.getItem("ma_hang_map") || '{}');
+let giaoDichList = JSON.parse(localStorage.getItem("congno") || "[]");
+let editingIndex = -1;
+let users = JSON.parse(localStorage.getItem("users") || "{}");
+// Tự động điền mật khẩu khi nhập tài khoản
+document.getElementById("loginUser").addEventListener("input", function () {
+  const u = this.value.trim();
+  if (users[u]) {
+    document.getElementById("loginPass").value = users[u];
+  } else {
+    document.getElementById("loginPass").value = "";
+  }
+});
+
+let currentUser = localStorage.getItem("currentUser") || "";
+let soduDauKy = JSON.parse(localStorage.getItem("sodu_dauky") || "{}");
+
+function layTenTuMa() {
+  const ma = document.getElementById("maKH").value.trim();
+  if (maTenMap[ma]) document.getElementById("ten").value = maTenMap[ma];
+  if (soduDauKy[ma]) document.getElementById("sodu").value = soduDauKy[ma];
+}
+
+function luuSoDuDauKy() {
+  const ma = document.getElementById("maKH").value.trim();
+  const sodu = parseFloat(document.getElementById("sodu").value);
+  if (!ma || isNaN(sodu)) return alert("Vui lòng nhập mã KH và số dư!");
+  soduDauKy[ma] = sodu;
+  localStorage.setItem("sodu_dauky", JSON.stringify(soduDauKy));
+  alert("Đã lưu số dư đầu kỳ.");
+}
+
+
+
+
+function dangNhap() {
+  const username = document.getElementById("loginUser").value.trim();
+  const password = document.getElementById("loginPass").value.trim();
+
+  let users = JSON.parse(localStorage.getItem("users")) || {};
+
+  if (!users[username]) {
+    alert("User không tồn tại");
+    return;
+  }
+
+  if (users[username].password === password) {
+    localStorage.setItem("currentUser", username);
+
+    // Lấy dữ liệu user
+    const userData = users[username];
+
+    // Hiển thị phần chính, ẩn phần đăng nhập
+    document.getElementById("loginCard").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+
+    // Điền thông tin lên form đăng nhập (nếu bạn muốn giữ form này hiển thị)
+    document.getElementById("companyName").value = userData.company;
+    document.getElementById("chuTich").value = userData.chuTich;
+
+    // Hiển thị thông tin chào mừng
+    document.getElementById("tenUser").innerText = username;
+    document.getElementById("tenCty").innerText = userData.company;
+    document.getElementById("tenChuTich").innerText = userData.chuTich;
+
+    alert("Đăng nhập thành công!");
+  } else {
+    alert("Sai mật khẩu!");
+  }
+}
+
+
+
+
+
+function dangKy() {
+  const u = document.getElementById("loginUser").value.trim();
+  const p = document.getElementById("loginPass").value;
+  const company = document.getElementById("companyName").value.trim();
+  const chuTich = document.getElementById("chuTich").value.trim();
+
+  if (!u || !p || !company || !chuTich) return alert("Vui lòng nhập đủ thông tin!");
+
+  if (users[u]) return alert("Tài khoản đã tồn tại!");
+  
+ users[u] = {
+  password: p,
+  company: company,
+  chuTich: chuTich
+};
+
+localStorage.setItem("users", JSON.stringify(users));
+localStorage.setItem("currentUser", u);
+
+// Hiển thị luôn thông tin
+document.getElementById("tenUser").innerText = u;
+document.getElementById("tenCty").innerText = company;
+document.getElementById("tenChuTich").innerText = chuTich;
+
+alert("Đăng ký thành công!");
+location.reload();
+}
+
+
+
+function dangXuat() {
+  localStorage.removeItem("currentUser");
+  location.reload();
+}
+
+window.onload = () => {
+  capNhatBang();
+  capNhatDataLists();
+
+  if (!currentUser) {
+    document.getElementById("loginCard").style.display = "block";
+    document.getElementById("mainContent").style.display = "none";
+  } else {
+    document.getElementById("loginCard").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    document.getElementById("tenUser").innerText = currentUser;
+
+    // Lấy dữ liệu user hiện tại
+    const users = JSON.parse(localStorage.getItem("users")) || {};
+    const userData = users[currentUser];
+    if (userData) {
+      document.getElementById("tenCty").innerText = userData.company;
+      document.getElementById("tenChuTich").innerText = userData.chuTich;
+    }
+  }
+};
+
+
+function layTenTuMaHang() {
+  const ma = document.getElementById("mahang").value.trim();
+  if (maHangMap[ma]) {
+    document.getElementById("tenhang").value = maHangMap[ma];
+
+  }
+}
+function capNhatThanhTien() {
+  const sl = parseFloat(document.getElementById("soluong").value) || 0;
+  const dg = parseFloat(document.getElementById("dongia").value) || 0;
+  document.getElementById("thanhtien").value = (sl * dg).toFixed(0);
+}
+function nhapGiaoDich() {
+  const maKH = document.getElementById("maKH").value.trim();
+  const ten = document.getElementById("ten").value.trim();
+  const ngay = document.getElementById("ngay").value;
+  const loai = document.getElementById("loai").value;
+  const mahang = document.getElementById("mahang").value.trim();
+  const tenhang = document.getElementById("tenhang").value.trim();
+  const soluong = parseFloat(document.getElementById("soluong").value);
+  const dongia = parseFloat(document.getElementById("dongia").value);
+  const thanhtien = parseFloat(document.getElementById("thanhtien").value);
+  if (!maKH || !ten || !ngay || !tenhang || isNaN(soluong) || isNaN(dongia) || isNaN(thanhtien)) {
+    alert("Vui lòng nhập đầy đủ thông tin!");
+    return;
+  }
+  maTenMap[maKH] = ten;
+  maHangMap[mahang] = tenhang;
+  localStorage.setItem("ma_ten_map", JSON.stringify(maTenMap));
+  localStorage.setItem("ma_hang_map", JSON.stringify(maHangMap));
+  const data = { maKH, ten, ngay, loai, mahang, tenhang, soluong, dongia, thanhtien };
+  if (editingIndex >= 0) {
+    giaoDichList[editingIndex] = data;
+    editingIndex = -1;
+  } else {
+    giaoDichList.push(data);
+  }
+  localStorage.setItem("congno", JSON.stringify(giaoDichList));
+  resetForm();
+  capNhatBang();
+}
+function resetForm() {
+  ["maKH", "ten", "ngay", "mahang", "tenhang", "soluong", "dongia", "thanhtien"].forEach(id => document.getElementById(id).value = "");
+  editingIndex = -1;
+}
+function capNhatBang() {
+  const tbody = document.getElementById("bangChiTiet");
+  const tongHopBody = document.getElementById("bangTongHop");
+  tbody.innerHTML = "";
+  tongHopBody.innerHTML = "";
+  const tongHop = {};
+  const noDauKy = {};
+  const today = new Date().toISOString().split("T")[0];
+  giaoDichList.forEach((g, i) => {
+    if (!tongHop[g.ten]) tongHop[g.ten] = { ghi: 0, tra: 0 };
+    if (!noDauKy[g.ten]) noDauKy[g.ten] = 0;
+    if (g.ngay < today) {
+      noDauKy[g.ten] += (g.loai === "Ghi Nợ" ? g.thanhtien : -g.thanhtien);
+    } else {
+      if (g.loai === "Ghi Nợ") tongHop[g.ten].ghi += g.thanhtien;
+      else tongHop[g.ten].tra += g.thanhtien;
+    }
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${g.ngay}</td>
+      <td>${g.maKH}</td>
+      <td>${g.ten}</td>
+      <td>${g.loai}</td>
+      <td>${g.mahang}</td>
+      <td>${g.tenhang}</td>
+      <td>${g.soluong}</td>
+      <td>${g.dongia}</td>
+      <td>${g.thanhtien.toLocaleString()}</td>
+      <td>
+        <button class="btn-warning" onclick="suaGiaoDich(${i})">Sửa</button>
+        <button class="btn-danger" onclick="xoaGiaoDich(${i})">Xóa</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  for (const ten in tongHop) {
+    const g = tongHop[ten];
+    const dauky = noDauKy[ten] || 0;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${ten}</td><td>${dauky}</td><td>${g.ghi}</td><td>${g.tra}</td><td>${dauky + g.ghi - g.tra}</td>`;
+    tongHopBody.appendChild(tr);
+  }
+}
+function suaGiaoDich(index) {
+  const g = giaoDichList[index];
+  document.getElementById("maKH").value = g.maKH;
+  document.getElementById("ten").value = g.ten;
+  document.getElementById("ngay").value = g.ngay;
+  document.getElementById("loai").value = g.loai;
+  document.getElementById("mahang").value = g.mahang;
+  document.getElementById("tenhang").value = g.tenhang;
+  document.getElementById("soluong").value = g.soluong;
+  document.getElementById("dongia").value = g.dongia;
+  document.getElementById("thanhtien").value = g.thanhtien;
+  editingIndex = index;
+}
+function xoaGiaoDich(i) {
+  if (confirm("Xóa dòng này?")) {
+    giaoDichList.splice(i, 1);
+    localStorage.setItem("congno", JSON.stringify(giaoDichList));
+    capNhatBang();
+  }
+}
+function xuatExcel() {
+  const wb = XLSX.utils.book_new();
+  const data = [["Ngày", "Mã KH", "Tên", "Loại", "Mã hàng", "Tên hàng", "SL", "Đơn giá", "Thành tiền"]];
+  giaoDichList.forEach(g => data.push([g.ngay, g.maKH, g.ten, g.loai, g.mahang, g.tenhang, g.soluong, g.dongia, g.thanhtien]));
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "GiaoDich");
+  XLSX.writeFile(wb, "cong_no.xlsx");
+}
+function inBaoCao() {
+  window.print();
+}
+window.onload = () => {
+  capNhatBang();
+  const dsMa = document.getElementById("danhSachMa");
+  const dsTen = document.getElementById("danhSachTen");
+  const dsMaHang = document.getElementById("danhSachMaHang");
+  dsMa.innerHTML = "";
+  dsTen.innerHTML = "";
+  dsMaHang.innerHTML = "";
+  for (const ma in maTenMap) {
+    const opt = document.createElement("option");
+    opt.value = ma;
+    dsMa.appendChild(opt);
+    const optTen = document.createElement("option");
+    optTen.value = maTenMap[ma];
+    dsTen.appendChild(optTen);
+  }
+  for (const ma in maHangMap) {
+    const opt = document.createElement("option");
+    opt.value = ma;
+    dsMaHang.appendChild(opt);
+  }
+};
+window.onload = () => {
+  if (!currentUser) {
+    document.getElementById("loginCard").style.display = "block";
+    document.getElementById("mainContent").style.display = "none";
+  } else {
+    document.getElementById("loginCard").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    document.getElementById("tenUser").innerText = currentUser;
+  }
+};
+</script>
+
+</body>
+</html>
+
+
